@@ -15,8 +15,8 @@
 # This is a multi-stage build. This file creates intermediate images and
 # discards some intermediate artifacts to produce an overall smaller image.
 
-ARG DISTRO_VERSION=bionic
-FROM ubuntu:${DISTRO_VERSION} AS devtools
+ARG DISTRO_VERSION=edge
+FROM alpine:${DISTRO_VERSION} AS devtools
 MAINTAINER "Carlos O'Ryan <coryan@users.noreply.github.com>"
 
 # Install the typical development tools and some additions:
@@ -26,16 +26,18 @@ MAINTAINER "Carlos O'Ryan <coryan@users.noreply.github.com>"
 #     CMake with GNU Make.
 #   - Install the boost libraries.
 #   -
-RUN apt update && \
-    apt install -y \
-        build-essential \
+RUN apk update && \
+    apk add \
+        boost-dev \
+        boost-static \
+        build-base \
         cmake \
         curl \
         git \
         gcc \
         g++ \
-        libboost-all-dev \
-        ninja-build \
+        libc-dev \
+        ninja \
         perl \
         unzip \
         tar
@@ -55,7 +57,7 @@ WORKDIR /l/vcpkg
 RUN ./bootstrap-vcpkg.sh --useSystemBinaries
 
 # Download and compile gRPC and its dependencies.
-RUN ./vcpkg install grpc
+RUN ./vcpkg install --triplet x64-linux grpc
 
 # Create the final Docker image, copy the final vcpkg artifacts, but remove the
 # intermediate ones, this reduces the image size from ~11GiB to ~2GiB.

@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-ARG DISTRO_VERSION=bionic
+ARG DISTRO_VERSION=latest
 FROM grpc-cpp-devtools:${DISTRO_VERSION} AS build
 MAINTAINER "Carlos O'Ryan <coryan@users.noreply.github.com>"
 
@@ -40,3 +40,6 @@ COPY --from=build \
     /w/.build/examples/echo/echo_server \
     /w/.build/examples/echo/echo_client \
     /r/
+
+EXPOSE 7000
+CMD "/r/echo_server"

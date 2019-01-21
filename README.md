@@ -26,7 +26,7 @@ reproduce.
 This step may take a few minutes, as it builds gRPC and other dependencies:
 
 ```bash
-sudo docker build -t grpc-cpp-devtools:bionic -f tools/Dockerfile.devtools tools
+sudo docker build -t grpc-cpp-devtools:latest -f tools/Dockerfile.devtools tools
 ```
 
 ## Create the server Docker image
@@ -35,15 +35,18 @@ Once the development tools image is created we can use it to create a Docker
 image with a C++ gRPC server:
 
 ```bash
-sudo docker build -t echo-server:latest -f examples/echo/Dockerfile.server .
+sudo docker build -t grpc-cpp-echo:latest -f examples/echo/Dockerfile.server .
 ```
 
 Note that this image is relatively small:
 
+```bash
+sudo docker image ls grpc-cpp-echo:latest
+```
+
 ```console
-$ sudo docker image ls echo-server:latest
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
-echo-server         latest              dff26aa65369        6 minutes ago       17.1MB
+grpc-cpp-echo       latest              04d95e5adaa6        4 minutes ago       14.6MB
 ```
 
 ## Run the server in the Docker image
@@ -53,7 +56,7 @@ from the image using the `-d` option and capture its id so you can terminate it
 later:
 
 ```bash
-ID=$(sudo docker run -d -p7000:7000 echo-server:latest /r/echo_server)
+ID=$(sudo docker run -d -P grpc-cpp-echo:latest /r/echo_server)
 ```
 
 Note the mapping of port 7000 to the localhost to ease testing.
@@ -63,7 +66,8 @@ Note the mapping of port 7000 to the localhost to ease testing.
 The image also contains a small client to demonstrate connecting to it:
 
 ```bash
-sudo docker run --network=host -it echo-server:latest /r/echo_client
+ADDRESS=$(sudo docker port "${ID}" 7000)
+sudo docker run --network=host grpc-cpp-echo:latest /r/echo_client --address "${ADDRESS}"
 ```
 
 ## Terminate the container
