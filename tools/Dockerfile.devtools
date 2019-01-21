@@ -1,0 +1,70 @@
+# Copyright 2019 Carlos O'Ryan
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations under
+# the License.
+
+# This is a multi-stage build. This file creates intermediate images and
+# discards some intermediate artifacts to produce an overall smaller image.
+
+ARG DISTRO_VERSION=bionic
+FROM ubuntu:${DISTRO_VERSION} AS devtools
+MAINTAINER "Carlos O'Ryan <coryan@users.noreply.github.com>"
+
+# Install the typical development tools and some additions:
+#   - curl, perl, unzip and tar are needed by vcpkg to compile dependencies,
+#     such as gRPC, that do not have Ubuntu packages.
+#   - ninja-build is a backend for CMake that often compiles faster than
+#     CMake with GNU Make.
+#   - Install the boost libraries.
+#   -
+RUN apt update && \
+    apt install -y \
+        build-essential \
+        cmake \
+        curl \
+        git \
+        gcc \
+        g++ \
+        libboost-all-dev \
+        ninja-build \
+        perl \
+        unzip \
+        tar
+
+# Use vcpkg (https://github.com/Microsoft/vcpkg.git) to compile the dependencies
+# that do not have Ubuntu packages.
+FROM devtools AS with_vcpkg
+
+# Download vcpkg from source.
+WORKDIR /l/
+RUN git clone https://github.com/Microsoft/vcpkg.git
+WORKDIR /l/vcpkg
+
+# Compile vcpkg. By default vcpkg downloads CMake, Ninja, Perl and other
+# binaries, my guess is that this makes the builds more reproduceable. However,
+# in our case the pre-installed binaries work fine.
+RUN ./bootstrap-vcpkg.sh --useSystemBinaries
+
+# Download and compile gRPC and its dependencies.
+RUN ./vcpkg install grpc
+
+# Create the final Docker image, copy the final vcpkg artifacts, but remove the
+# intermediate ones, this reduces the image size from ~11GiB to ~2GiB.
+FROM devtools
+WORKDIR /l/
+RUN git clone https://github.com/Microsoft/vcpkg.git
+COPY --from=with_vcpkg /l/vcpkg/installed /l/vcpkg/installed
+COPY --from=with_vcpkg /l/vcpkg/vcpkg /l/vcpkg
+
+# Printout the installed packages, serves as verification that vcpkg is
+# functional.
+RUN /l/vcpkg/vcpkg list

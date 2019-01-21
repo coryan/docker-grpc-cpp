@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package Echo;
+
+// The greeting service definition.
+service Repeater {
+    rpc Ping (EchoRequest) returns (EchoResponse) {}
+}
+
+message EchoRequest {
+    string text = 1;
+}
+
+message EchoResponse {
+    string text = 1;
+}

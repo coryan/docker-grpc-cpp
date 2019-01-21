@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+# CLion binary output directory
+cmake-build-debug/
+cmake-build-release/
+
+# CLion configuration files.
+.idea/
+
+# Manual binary output directory
+.build/
