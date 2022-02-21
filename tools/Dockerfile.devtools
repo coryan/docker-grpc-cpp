@@ -25,7 +25,7 @@ MAINTAINER "Carlos O'Ryan <coryan@users.noreply.github.com>"
 #   - ninja-build is a backend for CMake that often compiles faster than
 #     CMake with GNU Make.
 #   - Install the boost libraries.
-#   -
+#
 RUN apk update && \
     apk add \
         boost-dev \
@@ -40,7 +40,8 @@ RUN apk update && \
         ninja \
         perl \
         unzip \
-        tar
+        tar \
+        zip
 
 # Use vcpkg (https://github.com/Microsoft/vcpkg.git) to compile the dependencies
 # that do not have Ubuntu packages.
@@ -54,10 +55,10 @@ WORKDIR /l/vcpkg
 # Compile vcpkg. By default vcpkg downloads CMake, Ninja, Perl and other
 # binaries, my guess is that this makes the builds more reproduceable. However,
 # in our case the pre-installed binaries work fine.
-RUN ./bootstrap-vcpkg.sh --useSystemBinaries
+RUN VCPKG_FORCE_SYSTEM_BINARIES=1 ./bootstrap-vcpkg.sh -disableMetrics 
 
 # Download and compile gRPC and its dependencies.
-RUN ./vcpkg install --triplet x64-linux grpc
+RUN VCPKG_FORCE_SYSTEM_BINARIES=1 ./vcpkg install --triplet x64-linux grpc
 
 # Create the final Docker image, copy the final vcpkg artifacts, but remove the
 # intermediate ones, this reduces the image size from ~11GiB to ~2GiB.
